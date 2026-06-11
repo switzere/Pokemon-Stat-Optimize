@@ -1,0 +1,5 @@
+# This file is used internally by FFMPEG.
+file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/CircleAnnouncement/1987512680_2993790477_223132457.mp4'
+file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/CircleAnnouncement/2538612922_2834709167_2457940524.mp4'
+file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/CircleAnnouncement/2538612922_1158899648_1531742575.mp4'
+file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/CircleAnnouncement/2538612922_818688261_1018219272.mp4'

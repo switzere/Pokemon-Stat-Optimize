@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Optimizing Pokémon Defensive Bulk</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="optimize pretty_files/libs/clipboard/clipboard.min.js"></script>
+<script src="optimize pretty_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="optimize pretty_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="optimize pretty_files/libs/quarto-html/popper.min.js"></script>
+<script src="optimize pretty_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="optimize pretty_files/libs/quarto-html/anchor.min.js"></script>
+<link href="optimize pretty_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="optimize pretty_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="optimize pretty_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="optimize pretty_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="optimize pretty_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+<script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@*/dist/embed-amd.js" crossorigin="anonymous"></script>
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Optimizing Pokémon Defensive Bulk</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="a-datadriven-exploration-of-hp-vs-defense-ev-allocation" class="level3">
+<h3 class="anchored" data-anchor-id="a-datadriven-exploration-of-hp-vs-defense-ev-allocation">A Data‑Driven Exploration of HP vs Defense EV Allocation</h3>
+<p><em>By Evan Switzer</em></p>
+<hr>
+<p>In competitive Pokémon, small stat optimizations can decide entire matches.<br>
+In this project, I built a model to determine the optimal distribution of HP and Defense EVs to minimize incoming damage.</p>
+<p>This notebook walks through the logic, the math, and the visualization of the results.</p>
+</section>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<p><em>(This section loads libraries and styling. You can collapse it when exporting.)</em></p>
+<div id="0ce82519" class="cell" data-execution_count="307">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> math</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tkinter <span class="im">as</span> tk</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tkinter <span class="im">import</span> messagebox, ttk</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> ipywidgets <span class="im">import</span> FloatSlider, IntSlider, interact</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> ListedColormap</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mpl_toolkits.mplot3d <span class="im">import</span> Axes3D</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>plt.style.use(<span class="st">'style.mplstyle'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Bad value in file 'style.mplstyle', line 22 ('grid.color: #cccccc'): Key grid.color: '' does not look like a color arg</code></pre>
+</div>
+</div>
+<div id="f9f806b3" class="cell" data-execution_count="308">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>power <span class="op">=</span> <span class="dv">80</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>atk <span class="op">=</span> <span class="dv">150</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>base_health <span class="op">=</span> <span class="dv">150</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>base_defense <span class="op">=</span> <span class="dv">80</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>level <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>defense_evs <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>health_evs <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>total_evs <span class="op">=</span> <span class="dv">66</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="calculating-damage-percentages" class="level2">
+<h2 class="anchored" data-anchor-id="calculating-damage-percentages">Calculating Damage Percentages</h2>
+<p>To evaluate defensive bulk, I implemented the standard Pokémon damage formula with parameters for: - HP EVs - Defense EVs - Base stats - Multipliers (e.g., items, abilities)</p>
+<p>The function below returns the percent of HP lost from a single hit.</p>
+<div id="5c4e819a" class="cell" data-execution_count="309">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> damage_percent(defense_evs, health_evs, base_health<span class="op">=</span>base_health, base_defense<span class="op">=</span>base_defense, total_evs<span class="op">=</span>total_evs, def_mult<span class="op">=</span><span class="dv">1</span>, atk<span class="op">=</span><span class="dv">150</span>, power<span class="op">=</span><span class="dv">100</span>, level<span class="op">=</span><span class="dv">50</span>, bonus<span class="op">=</span>[<span class="dv">1</span>]):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">#print all values</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">#print(f"Defense EVs: {defense_evs}, Health EVs: {health_evs}, Base Health: {base_health}, Base Defense: {base_defense}, Total EVs: {total_evs}, Defense Multiplier: {def_mult}, Attack: {atk}, Power: {power}, Level: {level}, Bonus: {bonus}")</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    calculated_health <span class="op">=</span> base_health <span class="op">+</span> health_evs <span class="op">+</span> <span class="dv">75</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    calculated_defense <span class="op">=</span> math.floor((base_defense <span class="op">+</span> defense_evs <span class="op">+</span> <span class="dv">20</span>) <span class="op">*</span> def_mult)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (defense_evs <span class="op">+</span> health_evs) <span class="op">&gt;</span> total_evs:  <span class="co"># Constraint check</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span>  <span class="co"># Invalid solution</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    raw_damage <span class="op">=</span> math.floor((( ( (<span class="dv">2</span> <span class="op">*</span> level <span class="op">/</span> <span class="dv">5</span>) <span class="op">+</span> <span class="dv">2</span>) <span class="op">*</span> power <span class="op">*</span> ( (atk) <span class="op">/</span> calculated_defense) ) <span class="op">/</span> <span class="dv">50</span>) <span class="op">+</span> <span class="dv">2</span> )</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> b <span class="kw">in</span> bonus:</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        raw_damage <span class="op">=</span> <span class="bu">round</span>(raw_damage <span class="op">*</span> b)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">#print(f" Raw Damage: {raw_damage} / Calculated Health: {calculated_health}, Calculated Defense: {calculated_defense}, Damage Percent: {raw_damage / calculated_health * 100}%")</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> raw_damage <span class="op">/</span> calculated_health <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># print(((( ( (2 * level / 5) + 2) * power * ( (atk * bonus) / calculated_defense) ) / 50) + 2 ))</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># return ((( ( (2 * level / 5) + 2) * power * ( (atk * bonus) / calculated_defense) ) / 50) + 2 ) / (calculated_health) * 100</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="2257d378" class="cell" data-execution_count="310">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fix defense_evs and vary health_evs</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>defense_evs <span class="op">=</span> <span class="dv">32</span>  <span class="co"># Example fixed value</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>health_evs_range <span class="op">=</span> np.arange(<span class="dv">0</span>, <span class="dv">32</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>damage_percent_values <span class="op">=</span> [damage_percent(defense_evs, health_evs, base_health<span class="op">=</span>base_health, base_defense<span class="op">=</span>base_defense, total_evs<span class="op">=</span>total_evs) <span class="cf">for</span> health_evs <span class="kw">in</span> health_evs_range]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the curve</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>plt.plot(health_evs_range, damage_percent_values, color<span class="op">=</span><span class="st">'purple'</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'Health EVs'</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'Damage Percent'</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="ss">f'Damage Percent vs Health EVs (Defense EVs = </span><span class="sc">{</span>defense_evs<span class="sc">}</span><span class="ss">)'</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="optimize%20pretty_files/figure-html/cell-5-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="543f0308" class="cell" data-execution_count="311">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a grid of defense_evs and health_evs</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>defense_evs_range <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">32</span>, <span class="dv">32</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>health_evs_range <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">32</span>, <span class="dv">32</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>defense_evs_grid, health_evs_grid <span class="op">=</span> np.meshgrid(defense_evs_range, health_evs_range)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate damage_percent for each combination of defense_evs and health_evs</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>damage_percent_grid <span class="op">=</span> np.zeros_like(defense_evs_grid)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(defense_evs_grid.shape[<span class="dv">0</span>]):</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(defense_evs_grid.shape[<span class="dv">1</span>]):</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        defense_evs <span class="op">=</span> defense_evs_grid[i, j]</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        health_evs <span class="op">=</span> health_evs_grid[i, j]</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> defense_evs <span class="op">+</span> health_evs <span class="op">&lt;=</span> total_evs:  <span class="co"># Check total EV constraint</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            damage_percent_grid[i, j] <span class="op">=</span> damage_percent(defense_evs, health_evs, base_health<span class="op">=</span>base_health, base_defense<span class="op">=</span>base_defense, total_evs<span class="op">=</span>total_evs)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the 3D surface</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">7</span>))</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> fig.add_subplot(<span class="dv">111</span>, projection<span class="op">=</span><span class="st">'3d'</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>surf <span class="op">=</span> ax.plot_surface(defense_evs_grid, health_evs_grid, damage_percent_grid, cmap<span class="op">=</span><span class="st">'magma_r'</span>)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Add labels and title</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Defense EVs'</span>)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Health EVs'</span>)</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>ax.set_zlabel(<span class="st">'Damage Percent'</span>)</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">'Damage Percent vs Defense EVs and Health EVs'</span>)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Add a color bar</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>fig.colorbar(surf, ax<span class="op">=</span>ax, shrink<span class="op">=</span><span class="fl">0.5</span>, aspect<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="optimize%20pretty_files/figure-html/cell-6-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="003aecce" class="cell" data-execution_count="312">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find the minimum damage_percent and its coordinates</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>min_damage_percent <span class="op">=</span> np.<span class="bu">min</span>(damage_percent_grid)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>min_index <span class="op">=</span> np.unravel_index(np.argmin(damage_percent_grid), damage_percent_grid.shape)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>optimal_defense_evs <span class="op">=</span> defense_evs_grid[min_index]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>optimal_health_evs <span class="op">=</span> health_evs_grid[min_index]</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Minimum Damage Percent: </span><span class="sc">{</span>min_damage_percent<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Optimal Defense EVs: </span><span class="sc">{</span>optimal_defense_evs<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Optimal Health EVs: </span><span class="sc">{</span>optimal_health_evs<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Minimum Damage Percent: 20.233463035019454
+Optimal Defense EVs: 30.967741935483872
+Optimal Health EVs: 32.0</code></pre>
+</div>
+</div>
+<div id="36ba5a0b" class="cell" data-execution_count="313">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>total_evs <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#create a set of hp and def evs that add up to total_evs maxing at 32 for each. Example [32, 18], [31, 19], [30, 20], etc.]</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate all valid combinations of hp_evs and def_evs</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>ev_combinations <span class="op">=</span> [</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    (hp, total_evs <span class="op">-</span> hp)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> hp <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">min</span>(<span class="dv">32</span>, total_evs) <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> total_evs <span class="op">-</span> hp <span class="op">&lt;=</span> <span class="dv">32</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the combinations</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hp, defense <span class="kw">in</span> ev_combinations:</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"HP EVs: </span><span class="sc">{</span>hp<span class="sc">}</span><span class="ss">, Defense EVs: </span><span class="sc">{</span>defense<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>HP EVs: 18, Defense EVs: 32
+HP EVs: 19, Defense EVs: 31
+HP EVs: 20, Defense EVs: 30
+HP EVs: 21, Defense EVs: 29
+HP EVs: 22, Defense EVs: 28
+HP EVs: 23, Defense EVs: 27
+HP EVs: 24, Defense EVs: 26
+HP EVs: 25, Defense EVs: 25
+HP EVs: 26, Defense EVs: 24
+HP EVs: 27, Defense EVs: 23
+HP EVs: 28, Defense EVs: 22
+HP EVs: 29, Defense EVs: 21
+HP EVs: 30, Defense EVs: 20
+HP EVs: 31, Defense EVs: 19
+HP EVs: 32, Defense EVs: 18</code></pre>
+</div>
+</div>
+<div id="cb96a53c" class="cell" data-execution_count="314">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> optimize_damage_percent(base_health, base_defense, total_evs, def_mult<span class="op">=</span><span class="dv">1</span>, atk<span class="op">=</span><span class="dv">150</span>, power<span class="op">=</span><span class="dv">100</span>, level<span class="op">=</span><span class="dv">50</span>):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Optimizes Damage Percent based on given constants and EV constraints.</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co">    Args:</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co">        power (int): Power of the move.</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co">        atk (int): Attack stat.</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co">        base_health (int): Base health stat.</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="co">        base_defense (int): Base defense stat.</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co">        level (int): Level of the Pokémon.</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="co">        total_evs (int): Total EVs available to distribute.</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="co">        dict: A dictionary containing the optimal HP EVs, Defense EVs, maximum Damage Percent, and a plot.</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Generate all valid combinations of hp_evs and def_evs</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    ev_combinations <span class="op">=</span> [</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>        (hp, total_evs <span class="op">-</span> hp)</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> hp <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="bu">min</span>(<span class="dv">32</span>, total_evs) <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> total_evs <span class="op">-</span> hp <span class="op">&lt;=</span> <span class="dv">32</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate damage_percent for each combination</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>    results <span class="op">=</span> []</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> hp, defense <span class="kw">in</span> ev_combinations:</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>        hp_percent <span class="op">=</span> damage_percent(defense, hp, base_health<span class="op">=</span>base_health, base_defense<span class="op">=</span>base_defense, total_evs<span class="op">=</span>total_evs, def_mult<span class="op">=</span>def_mult, atk<span class="op">=</span>atk, power<span class="op">=</span>power, level<span class="op">=</span>level)</span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>        results.append((hp, defense, hp_percent))</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Find the optimal combination</span></span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>    optimal_combination <span class="op">=</span> <span class="bu">min</span>(results, key<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="dv">2</span>])  <span class="co"># Minimize damage_percent</span></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>    optimal_hp, optimal_defense, min_damage_percent <span class="op">=</span> optimal_combination</span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Print the optimal results</span></span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Optimal HP EVs: </span><span class="sc">{</span>optimal_hp<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Optimal Defense EVs: </span><span class="sc">{</span>optimal_defense<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Minimum Damage Percent: </span><span class="sc">{</span>min_damage_percent<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Plot the results</span></span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>    hp_evs <span class="op">=</span> [r[<span class="dv">0</span>] <span class="cf">for</span> r <span class="kw">in</span> results]</span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a>    def_evs <span class="op">=</span> [r[<span class="dv">1</span>] <span class="cf">for</span> r <span class="kw">in</span> results]</span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a>    damage_percents <span class="op">=</span> [r[<span class="dv">2</span>] <span class="cf">for</span> r <span class="kw">in</span> results]</span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>    plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">6</span>))</span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>    plt.scatter(hp_evs, def_evs, c<span class="op">=</span>damage_percents, cmap<span class="op">=</span><span class="st">'magma_r'</span>, s<span class="op">=</span><span class="dv">100</span>)</span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>    plt.colorbar(label<span class="op">=</span><span class="st">'Damage Percent'</span>)</span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>    plt.xlabel(<span class="st">'HP EVs'</span>)</span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>    plt.ylabel(<span class="st">'Defense EVs'</span>)</span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>    plt.title(<span class="st">'Damage Percent for Each EV Combination'</span>)</span>
+<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Return the results as a dictionary</span></span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a>        <span class="st">"optimal_hp_evs"</span>: optimal_hp,</span>
+<span id="cb11-55"><a href="#cb11-55" aria-hidden="true" tabindex="-1"></a>        <span class="st">"optimal_defense_evs"</span>: optimal_defense,</span>
+<span id="cb11-56"><a href="#cb11-56" aria-hidden="true" tabindex="-1"></a>        <span class="st">"min_damage_percent"</span>: min_damage_percent</span>
+<span id="cb11-57"><a href="#cb11-57" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb11-58"><a href="#cb11-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-59"><a href="#cb11-59" aria-hidden="true" tabindex="-1"></a><span class="co"># HP = Base + StatPoints + 75</span></span>
+<span id="cb11-60"><a href="#cb11-60" aria-hidden="true" tabindex="-1"></a><span class="co"># OtherStat = lower( (Base + StatPoints + 20) * Allignment(1.2/0.8/1) )</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="6e0fc69c" class="cell" data-execution_count="315">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#simplified formula for Damage Percent:</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">#((( 22 / calculated_defense ) / 50) + 2 ) / (calculated_health) * 100</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> optimize_damage_percent(</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    base_health<span class="op">=</span><span class="dv">75</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    base_defense<span class="op">=</span><span class="dv">60</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    total_evs<span class="op">=</span><span class="dv">50</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    def_mult <span class="op">=</span> <span class="fl">0.8</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(results)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Optimal HP EVs: 21
+Optimal Defense EVs: 29
+Minimum Damage Percent: 45.02923976608187</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="optimize%20pretty_files/figure-html/cell-10-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{'optimal_hp_evs': 21, 'optimal_defense_evs': 29, 'min_damage_percent': 45.02923976608187}</code></pre>
+</div>
+</div>
+<div id="30ae20de" class="cell" data-execution_count="316">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>starting_base_health <span class="op">=</span> <span class="dv">95</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>starting_base_defense <span class="op">=</span> <span class="dv">65</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>atk <span class="op">=</span> <span class="dv">182</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>power <span class="op">=</span> <span class="dv">160</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>level <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>bonus <span class="op">=</span> [<span class="fl">1.5</span>]</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> interactive_heatmap_with_widgets():</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> plot_heatmap(base_health, base_defense, total_evs, def_mult):        </span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create a grid for HP EVs and Defense EVs</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>        hp_evs_range <span class="op">=</span> np.arange(<span class="dv">0</span>, <span class="dv">33</span>)  <span class="co"># EVs from 0 to 32</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        def_evs_range <span class="op">=</span> np.arange(<span class="dv">0</span>, <span class="dv">33</span>)</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>        heatmap_data <span class="op">=</span> np.zeros((<span class="bu">len</span>(hp_evs_range), <span class="bu">len</span>(def_evs_range)))</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Calculate damage_percent for each combination</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, hp <span class="kw">in</span> <span class="bu">enumerate</span>(hp_evs_range):</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> j, defense <span class="kw">in</span> <span class="bu">enumerate</span>(def_evs_range):</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>                heatmap_data[i, j] <span class="op">=</span> damage_percent(defense_evs<span class="op">=</span>defense, health_evs<span class="op">=</span>hp, base_health<span class="op">=</span>base_health, base_defense<span class="op">=</span>base_defense, atk<span class="op">=</span>atk, power<span class="op">=</span>power, level<span class="op">=</span>level, bonus<span class="op">=</span>bonus, def_mult<span class="op">=</span>def_mult, total_evs<span class="op">=</span>total_evs)</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Flip the heatmap data along the y-axis to match the reversed y-axis labels</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>        <span class="co"># heatmap_df = pd.DataFrame(heatmap_data)</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>        <span class="co"># print(heatmap_df)</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>        <span class="co"># heatmap_data = np.flipud(heatmap_data)</span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>        <span class="co"># heatmap_df = pd.DataFrame(heatmap_data)</span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>        <span class="co"># print(heatmap_df)</span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Find the minimum damage_percent that is not zero and its coordinates</span></span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Mask zero values in the heatmap data</span></span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>        masked_heatmap <span class="op">=</span> np.ma.masked_where(heatmap_data <span class="op">==</span> <span class="dv">0</span>, heatmap_data)</span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>        flipped_heatmap_data <span class="op">=</span> np.flipud(heatmap_data)</span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Find the index of the minimum non-zero value</span></span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a>        min_index <span class="op">=</span> np.unravel_index(np.ma.argmin(masked_heatmap), flipped_heatmap_data.shape)</span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Extract the optimal EVs</span></span>
+<span id="cb15-42"><a href="#cb15-42" aria-hidden="true" tabindex="-1"></a>        optimal_hp_evs <span class="op">=</span> hp_evs_range[min_index[<span class="dv">0</span>]]</span>
+<span id="cb15-43"><a href="#cb15-43" aria-hidden="true" tabindex="-1"></a>        optimal_defense_evs <span class="op">=</span> def_evs_range[min_index[<span class="dv">1</span>]]</span>
+<span id="cb15-44"><a href="#cb15-44" aria-hidden="true" tabindex="-1"></a>        optimal_hp_evs <span class="op">=</span> hp_evs_range[min_index[<span class="dv">0</span>]]</span>
+<span id="cb15-45"><a href="#cb15-45" aria-hidden="true" tabindex="-1"></a>        optimal_defense_evs <span class="op">=</span> def_evs_range[min_index[<span class="dv">1</span>]]</span>
+<span id="cb15-46"><a href="#cb15-46" aria-hidden="true" tabindex="-1"></a>        min_damage_percent <span class="op">=</span> heatmap_data[min_index]</span>
+<span id="cb15-47"><a href="#cb15-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-48"><a href="#cb15-48" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Optimal HP EVs: </span><span class="sc">{</span>optimal_hp_evs<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-49"><a href="#cb15-49" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Optimal Defense EVs: </span><span class="sc">{</span>optimal_defense_evs<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-50"><a href="#cb15-50" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Minimum Damage Percent: </span><span class="sc">{</span>min_damage_percent<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-51"><a href="#cb15-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-52"><a href="#cb15-52" aria-hidden="true" tabindex="-1"></a>        <span class="co">#flip optimal_hp_evs to match the flipped y-axis</span></span>
+<span id="cb15-53"><a href="#cb15-53" aria-hidden="true" tabindex="-1"></a>        optimal_hp_evs <span class="op">=</span> <span class="dv">32</span> <span class="op">-</span> optimal_hp_evs</span>
+<span id="cb15-54"><a href="#cb15-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-55"><a href="#cb15-55" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create a custom colormap</span></span>
+<span id="cb15-56"><a href="#cb15-56" aria-hidden="true" tabindex="-1"></a>        cmap <span class="op">=</span> sns.color_palette(<span class="st">"magma_r"</span>, as_cmap<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb15-57"><a href="#cb15-57" aria-hidden="true" tabindex="-1"></a>        cmap_with_grey <span class="op">=</span> ListedColormap(<span class="bu">list</span>(cmap(np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">256</span>))))</span>
+<span id="cb15-58"><a href="#cb15-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-59"><a href="#cb15-59" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Mask zero values</span></span>
+<span id="cb15-60"><a href="#cb15-60" aria-hidden="true" tabindex="-1"></a>        mask <span class="op">=</span> flipped_heatmap_data <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb15-61"><a href="#cb15-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-62"><a href="#cb15-62" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create the heat map</span></span>
+<span id="cb15-63"><a href="#cb15-63" aria-hidden="true" tabindex="-1"></a>        plt.figure(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>))</span>
+<span id="cb15-64"><a href="#cb15-64" aria-hidden="true" tabindex="-1"></a>        sns.heatmap(</span>
+<span id="cb15-65"><a href="#cb15-65" aria-hidden="true" tabindex="-1"></a>            flipped_heatmap_data,</span>
+<span id="cb15-66"><a href="#cb15-66" aria-hidden="true" tabindex="-1"></a>            xticklabels<span class="op">=</span>def_evs_range,  <span class="co"># Defense EVs on x-axis</span></span>
+<span id="cb15-67"><a href="#cb15-67" aria-hidden="true" tabindex="-1"></a>            yticklabels<span class="op">=</span>hp_evs_range[::<span class="op">-</span><span class="dv">1</span>],  <span class="co"># Reverse HP EVs for correct orientation</span></span>
+<span id="cb15-68"><a href="#cb15-68" aria-hidden="true" tabindex="-1"></a>            cmap<span class="op">=</span>cmap_with_grey,</span>
+<span id="cb15-69"><a href="#cb15-69" aria-hidden="true" tabindex="-1"></a>            mask<span class="op">=</span>mask,</span>
+<span id="cb15-70"><a href="#cb15-70" aria-hidden="true" tabindex="-1"></a>            cbar_kws<span class="op">=</span>{<span class="st">'label'</span>: <span class="st">'Damage Percent'</span>}</span>
+<span id="cb15-71"><a href="#cb15-71" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb15-72"><a href="#cb15-72" aria-hidden="true" tabindex="-1"></a>        plt.xlabel(<span class="st">"Defense EVs"</span>)</span>
+<span id="cb15-73"><a href="#cb15-73" aria-hidden="true" tabindex="-1"></a>        plt.ylabel(<span class="st">"HP EVs"</span>)</span>
+<span id="cb15-74"><a href="#cb15-74" aria-hidden="true" tabindex="-1"></a>        plt.title(<span class="st">"Damage Percent Heat Map"</span>)</span>
+<span id="cb15-75"><a href="#cb15-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-76"><a href="#cb15-76" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Overlay the total_evs constraint line</span></span>
+<span id="cb15-77"><a href="#cb15-77" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Overlay the total_evs constraint line</span></span>
+<span id="cb15-78"><a href="#cb15-78" aria-hidden="true" tabindex="-1"></a>        hp_evs <span class="op">=</span> np.arange(<span class="dv">0</span>, <span class="bu">min</span>(<span class="dv">33</span>, total_evs <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb15-79"><a href="#cb15-79" aria-hidden="true" tabindex="-1"></a>        def_evs <span class="op">=</span> total_evs <span class="op">-</span> hp_evs</span>
+<span id="cb15-80"><a href="#cb15-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-81"><a href="#cb15-81" aria-hidden="true" tabindex="-1"></a>        <span class="co">#plt.plot(def_evs, hp_evs[::-1], color="red", label="Total EVs Constraint")  # Reverse hp_evs for flipped y-axis</span></span>
+<span id="cb15-82"><a href="#cb15-82" aria-hidden="true" tabindex="-1"></a>        plt.scatter(</span>
+<span id="cb15-83"><a href="#cb15-83" aria-hidden="true" tabindex="-1"></a>            optimal_defense_evs<span class="op">+</span><span class="fl">.5</span>, </span>
+<span id="cb15-84"><a href="#cb15-84" aria-hidden="true" tabindex="-1"></a>            optimal_hp_evs<span class="op">+</span><span class="fl">.5</span>,</span>
+<span id="cb15-85"><a href="#cb15-85" aria-hidden="true" tabindex="-1"></a>            color<span class="op">=</span><span class="st">"white"</span>, </span>
+<span id="cb15-86"><a href="#cb15-86" aria-hidden="true" tabindex="-1"></a>            edgecolor<span class="op">=</span><span class="st">"black"</span>, </span>
+<span id="cb15-87"><a href="#cb15-87" aria-hidden="true" tabindex="-1"></a>            s<span class="op">=</span><span class="dv">100</span>, </span>
+<span id="cb15-88"><a href="#cb15-88" aria-hidden="true" tabindex="-1"></a>            label<span class="op">=</span><span class="st">"Optimal Point"</span>,</span>
+<span id="cb15-89"><a href="#cb15-89" aria-hidden="true" tabindex="-1"></a>            linewidths<span class="op">=</span><span class="fl">2.5</span>,</span>
+<span id="cb15-90"><a href="#cb15-90" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb15-91"><a href="#cb15-91" aria-hidden="true" tabindex="-1"></a>        plt.legend()</span>
+<span id="cb15-92"><a href="#cb15-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-93"><a href="#cb15-93" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Show the plot</span></span>
+<span id="cb15-94"><a href="#cb15-94" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
+<span id="cb15-95"><a href="#cb15-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-96"><a href="#cb15-96" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Interactive sliders for parameters</span></span>
+<span id="cb15-97"><a href="#cb15-97" aria-hidden="true" tabindex="-1"></a>    interact(</span>
+<span id="cb15-98"><a href="#cb15-98" aria-hidden="true" tabindex="-1"></a>        plot_heatmap,</span>
+<span id="cb15-99"><a href="#cb15-99" aria-hidden="true" tabindex="-1"></a>        base_health<span class="op">=</span>IntSlider(value<span class="op">=</span>starting_base_health, <span class="bu">min</span><span class="op">=</span><span class="dv">49</span>, <span class="bu">max</span><span class="op">=</span><span class="dv">120</span>, step<span class="op">=</span><span class="dv">1</span>, description<span class="op">=</span><span class="st">"Base Health"</span>),</span>
+<span id="cb15-100"><a href="#cb15-100" aria-hidden="true" tabindex="-1"></a>        base_defense<span class="op">=</span>IntSlider(value<span class="op">=</span>starting_base_defense, <span class="bu">min</span><span class="op">=</span><span class="dv">40</span>, <span class="bu">max</span><span class="op">=</span><span class="dv">150</span>, step<span class="op">=</span><span class="dv">1</span>, description<span class="op">=</span><span class="st">"Base Defense"</span>),</span>
+<span id="cb15-101"><a href="#cb15-101" aria-hidden="true" tabindex="-1"></a>        total_evs<span class="op">=</span>IntSlider(value<span class="op">=</span><span class="dv">50</span>, <span class="bu">min</span><span class="op">=</span><span class="dv">0</span>, <span class="bu">max</span><span class="op">=</span><span class="dv">64</span>, step<span class="op">=</span><span class="dv">1</span>, description<span class="op">=</span><span class="st">"Total EVs"</span>),</span>
+<span id="cb15-102"><a href="#cb15-102" aria-hidden="true" tabindex="-1"></a>        def_mult<span class="op">=</span>FloatSlider(value<span class="op">=</span><span class="fl">1.0</span>, <span class="bu">min</span><span class="op">=</span><span class="fl">0.8</span>, <span class="bu">max</span><span class="op">=</span><span class="fl">1.2</span>, step<span class="op">=</span><span class="fl">0.2</span>, description<span class="op">=</span><span class="st">"Defense Multiplier"</span>)</span>
+<span id="cb15-103"><a href="#cb15-103" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-104"><a href="#cb15-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-105"><a href="#cb15-105" aria-hidden="true" tabindex="-1"></a><span class="co"># Call the function to enable interactivity</span></span>
+<span id="cb15-106"><a href="#cb15-106" aria-hidden="true" tabindex="-1"></a>interactive_heatmap_with_widgets()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id":"48d853eec6564d569596beec966cd884","version_major":2,"version_minor":0,"quarto_mimetype":"application/vnd.jupyter.widget-view+json"}
+</script>
+</div>
+</div>
+<div id="b1dc32e8" class="cell" data-execution_count="317">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">#so I have a set of attacks that I want to optimize for, I think I want checkpoints for each attack</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">#Targets x Parental Bond x Weather x GlaiveRush x Critical x random x STAB x Type x Burn x other x ZMove x TeraShield</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>attacks <span class="op">=</span> [</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"name"</span>: <span class="st">"Dire Claw"</span>, <span class="st">"power"</span>: <span class="dv">80</span>, <span class="st">"atk"</span>: <span class="dv">182</span>, <span class="st">"bonus"</span>: [<span class="fl">1.5</span>,<span class="dv">2</span>], <span class="st">"PhySpec"</span>: <span class="st">"Physical"</span>, <span class="st">"evs"</span>: []},</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a> <span class="co">#   {"name": "Attack 2", "power": 100, "atk": 120, "bonus": 1, "PhySpec": "Physical", "evs": []},</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    {<span class="st">"name"</span>: <span class="st">"Hyper Voice"</span>, <span class="st">"power"</span>: <span class="dv">100</span>, <span class="st">"atk"</span>: <span class="dv">178</span>, <span class="st">"bonus"</span>: [<span class="fl">1.5</span>, <span class="dv">2</span>, <span class="fl">0.75</span>, <span class="fl">1.2</span>], <span class="st">"PhySpec"</span>: <span class="st">"Special"</span>, <span class="st">"evs"</span>: []}</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>defense <span class="op">=</span> {</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"name"</span>: <span class="st">"Pokemon 1"</span>,</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"base_health"</span>: <span class="dv">88</span>,</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"base_defense"</span>: <span class="dv">80</span>,</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"base_special_defense"</span>: <span class="dv">95</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>starting_base_health <span class="op">=</span> defense[<span class="st">'base_health'</span>]</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>starting_base_defense <span class="op">=</span> defense[<span class="st">'base_defense'</span>]</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>starting_base_special_defense <span class="op">=</span> defense[<span class="st">'base_special_defense'</span>]</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>level <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>evs_map <span class="op">=</span> np.zeros((<span class="dv">33</span>, <span class="dv">33</span>))</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>attackN <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> attacks:</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Optimizing for </span><span class="sc">{</span>a[<span class="st">'name'</span>]<span class="sc">}</span><span class="ss">..."</span>)</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, hp <span class="kw">in</span> <span class="bu">enumerate</span>(np.arange(<span class="dv">0</span>, <span class="dv">33</span>)):</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j, defense <span class="kw">in</span> <span class="bu">enumerate</span>(np.arange(<span class="dv">0</span>, <span class="dv">33</span>)):</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>            base_defense <span class="op">=</span> starting_base_defense <span class="cf">if</span> a[<span class="st">'PhySpec'</span>] <span class="op">==</span> <span class="st">"Physical"</span> <span class="cf">else</span> starting_base_special_defense</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>            evs_map[i, j] <span class="op">=</span> damage_percent(defense_evs <span class="op">=</span> defense, health_evs <span class="op">=</span> hp, base_health <span class="op">=</span> starting_base_health, base_defense <span class="op">=</span> base_defense, total_evs <span class="op">=</span> <span class="dv">64</span>, def_mult <span class="op">=</span> <span class="dv">1</span>, atk <span class="op">=</span> a[<span class="st">'atk'</span>], power <span class="op">=</span> a[<span class="st">'power'</span>], level <span class="op">=</span> level, bonus <span class="op">=</span> a[<span class="st">'bonus'</span>])</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> evs_map[i, j] <span class="op">!=</span> <span class="dv">0</span> <span class="kw">and</span> evs_map[i, j] <span class="op">&lt;</span> <span class="dv">100</span>:</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>                attacks[attackN][<span class="st">'evs'</span>].append((hp, defense, evs_map[i, j]))</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>                attacks[attackN][<span class="st">'evs'</span>].append((hp, defense, <span class="dv">0</span>))</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>    attackN <span class="op">+=</span> <span class="dv">1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Optimizing for Dire Claw...
+Optimizing for Hyper Voice...</code></pre>
+</div>
+</div>
+<div id="776f8a69" class="cell" data-execution_count="318">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">#attach the lowest defense percent and lowest special defense percent to each unique hp evs value for each attack</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#create dict with a evs key for 1-32</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>optimized_evs <span class="op">=</span> {hp: {<span class="st">"defense"</span>: <span class="va">None</span>, <span class="st">"special_defense"</span>: <span class="va">None</span>} <span class="cf">for</span> hp <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">33</span>)}</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> attacks:</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">#for each hp ev value get the lowest defense evs and lowest special defense evs and attach to optimized_evs dict</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> hp <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">33</span>):</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>        defense_evs <span class="op">=</span> [ev[<span class="dv">1</span>] <span class="cf">for</span> ev <span class="kw">in</span> a[<span class="st">'evs'</span>] <span class="cf">if</span> ev[<span class="dv">0</span>] <span class="op">==</span> hp <span class="kw">and</span> ev[<span class="dv">2</span>] <span class="op">!=</span> <span class="dv">0</span>]</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>        damage_percents <span class="op">=</span> [ev[<span class="dv">2</span>] <span class="cf">for</span> ev <span class="kw">in</span> a[<span class="st">'evs'</span>] <span class="cf">if</span> ev[<span class="dv">0</span>] <span class="op">==</span> hp <span class="kw">and</span> ev[<span class="dv">2</span>] <span class="op">!=</span> <span class="dv">0</span>]</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(defense_evs) <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>            min_defense_evs <span class="op">=</span> <span class="bu">min</span>(defense_evs)</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> a[<span class="st">'PhySpec'</span>] <span class="op">==</span> <span class="st">"Physical"</span>:</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>                optimized_evs[hp][<span class="st">'defense'</span>] <span class="op">=</span> min_defense_evs</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>                optimized_evs[hp][<span class="st">'defense_percent'</span>] <span class="op">=</span> damage_percents[defense_evs.index(min_defense_evs)]</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>                optimized_evs[hp][<span class="st">'special_defense'</span>] <span class="op">=</span> min_defense_evs</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>                optimized_evs[hp][<span class="st">'special_defense_percent'</span>] <span class="op">=</span> damage_percents[defense_evs.index(min_defense_evs)]</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> a[<span class="st">'PhySpec'</span>] <span class="op">==</span> <span class="st">"Physical"</span>:</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>                optimized_evs[hp][<span class="st">'defense'</span>] <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>                optimized_evs[hp][<span class="st">'defense_percent'</span>] <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>                optimized_evs[hp][<span class="st">'special_defense'</span>] <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>                optimized_evs[hp][<span class="st">'special_defense_percent'</span>] <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a><span class="co"># for oe in optimized_evs:</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a><span class="co">#     #if sum of hp evs, def evs, spD evs is less than or equal to 66 keep</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="co">#     if optimized_evs[oe]['defense'] is not None and optimized_evs[oe]['special_defense'] is not None:</span></span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a><span class="co">#         if oe + optimized_evs[oe]['defense'] + optimized_evs[oe]['special_defense'] &lt;= 66:</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a><span class="co">#             optimized_evs[oe]['total'] = oe + optimized_evs[oe]['defense'] + optimized_evs[oe]['special_defense']</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="3b18aa9b" class="cell" data-execution_count="319">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">#for each set of optimized evs find the one with the least evs total (hp, def, spD) and attach it to optimized evs</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hp <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">33</span>):</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> optimized_evs[hp][<span class="st">'defense'</span>] <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> optimized_evs[hp][<span class="st">'special_defense'</span>] <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">#remove key</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">del</span> optimized_evs[hp]</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    defense_evs <span class="op">=</span> optimized_evs[hp][<span class="st">'defense'</span>] <span class="cf">if</span> optimized_evs[hp][<span class="st">'defense'</span>] <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="cf">else</span> <span class="dv">0</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    special_defense_evs <span class="op">=</span> optimized_evs[hp][<span class="st">'special_defense'</span>] <span class="cf">if</span> optimized_evs[hp][<span class="st">'special_defense'</span>] <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="cf">else</span> <span class="dv">0</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    total_evs <span class="op">=</span> hp <span class="op">+</span> defense_evs <span class="op">+</span> special_defense_evs</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    optimized_evs[hp][<span class="st">'total_evs'</span>] <span class="op">=</span> total_evs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="f2596eda" class="cell" data-execution_count="320">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>optimized_evs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="320">
+<pre><code>{0: {'defense': 21,
+  'special_defense': 18,
+  'defense_percent': 99.38650306748467,
+  'special_defense_percent': 99.38650306748467,
+  'total_evs': 39},
+ 1: {'defense': 21,
+  'special_defense': 18,
+  'defense_percent': 98.78048780487805,
+  'special_defense_percent': 98.78048780487805,
+  'total_evs': 40},
+ 2: {'defense': 19,
+  'special_defense': 18,
+  'defense_percent': 99.39393939393939,
+  'special_defense_percent': 98.18181818181819,
+  'total_evs': 39},
+ 3: {'defense': 19,
+  'special_defense': 18,
+  'defense_percent': 98.79518072289156,
+  'special_defense_percent': 97.59036144578313,
+  'total_evs': 40},
+ 4: {'defense': 19,
+  'special_defense': 16,
+  'defense_percent': 98.20359281437125,
+  'special_defense_percent': 99.40119760479041,
+  'total_evs': 39},
+ 5: {'defense': 19,
+  'special_defense': 16,
+  'defense_percent': 97.61904761904762,
+  'special_defense_percent': 98.80952380952381,
+  'total_evs': 40},
+ 6: {'defense': 17,
+  'special_defense': 14,
+  'defense_percent': 99.40828402366864,
+  'special_defense_percent': 99.40828402366864,
+  'total_evs': 37},
+ 7: {'defense': 17,
+  'special_defense': 12,
+  'defense_percent': 98.82352941176471,
+  'special_defense_percent': 99.41176470588235,
+  'total_evs': 36},
+ 8: {'defense': 17,
+  'special_defense': 12,
+  'defense_percent': 98.24561403508771,
+  'special_defense_percent': 98.83040935672514,
+  'total_evs': 37},
+ 9: {'defense': 17,
+  'special_defense': 12,
+  'defense_percent': 97.67441860465115,
+  'special_defense_percent': 98.25581395348837,
+  'total_evs': 38},
+ 10: {'defense': 15,
+  'special_defense': 12,
+  'defense_percent': 99.42196531791907,
+  'special_defense_percent': 97.6878612716763,
+  'total_evs': 37},
+ 11: {'defense': 15,
+  'special_defense': 10,
+  'defense_percent': 98.85057471264368,
+  'special_defense_percent': 99.42528735632183,
+  'total_evs': 36},
+ 12: {'defense': 13,
+  'special_defense': 10,
+  'defense_percent': 99.42857142857143,
+  'special_defense_percent': 98.85714285714286,
+  'total_evs': 35},
+ 13: {'defense': 13,
+  'special_defense': 10,
+  'defense_percent': 98.86363636363636,
+  'special_defense_percent': 98.29545454545455,
+  'total_evs': 36},
+ 14: {'defense': 11,
+  'special_defense': 8,
+  'defense_percent': 99.43502824858757,
+  'special_defense_percent': 99.43502824858757,
+  'total_evs': 33},
+ 15: {'defense': 11,
+  'special_defense': 8,
+  'defense_percent': 98.87640449438202,
+  'special_defense_percent': 98.87640449438202,
+  'total_evs': 34},
+ 16: {'defense': 11,
+  'special_defense': 6,
+  'defense_percent': 98.32402234636871,
+  'special_defense_percent': 99.4413407821229,
+  'total_evs': 33},
+ 17: {'defense': 11,
+  'special_defense': 6,
+  'defense_percent': 97.77777777777777,
+  'special_defense_percent': 98.88888888888889,
+  'total_evs': 34},
+ 18: {'defense': 9,
+  'special_defense': 4,
+  'defense_percent': 99.4475138121547,
+  'special_defense_percent': 99.4475138121547,
+  'total_evs': 31},
+ 19: {'defense': 9,
+  'special_defense': 4,
+  'defense_percent': 98.9010989010989,
+  'special_defense_percent': 98.9010989010989,
+  'total_evs': 32},
+ 20: {'defense': 9,
+  'special_defense': 4,
+  'defense_percent': 98.36065573770492,
+  'special_defense_percent': 98.36065573770492,
+  'total_evs': 33},
+ 21: {'defense': 9,
+  'special_defense': 4,
+  'defense_percent': 97.82608695652173,
+  'special_defense_percent': 97.82608695652173,
+  'total_evs': 34},
+ 22: {'defense': 7,
+  'special_defense': 2,
+  'defense_percent': 99.45945945945947,
+  'special_defense_percent': 99.45945945945947,
+  'total_evs': 31},
+ 23: {'defense': 7,
+  'special_defense': 2,
+  'defense_percent': 98.9247311827957,
+  'special_defense_percent': 98.9247311827957,
+  'total_evs': 32},
+ 24: {'defense': 6,
+  'special_defense': 2,
+  'defense_percent': 99.46524064171123,
+  'special_defense_percent': 98.3957219251337,
+  'total_evs': 32},
+ 25: {'defense': 6,
+  'special_defense': 1,
+  'defense_percent': 98.93617021276596,
+  'special_defense_percent': 99.46808510638297,
+  'total_evs': 32},
+ 26: {'defense': 4,
+  'special_defense': 1,
+  'defense_percent': 99.47089947089947,
+  'special_defense_percent': 98.94179894179894,
+  'total_evs': 31},
+ 27: {'defense': 4,
+  'special_defense': 1,
+  'defense_percent': 98.94736842105263,
+  'special_defense_percent': 98.42105263157895,
+  'total_evs': 32},
+ 28: {'defense': 4,
+  'special_defense': 0,
+  'defense_percent': 98.42931937172776,
+  'special_defense_percent': 99.47643979057592,
+  'total_evs': 32},
+ 29: {'defense': 4,
+  'special_defense': 0,
+  'defense_percent': 97.91666666666666,
+  'special_defense_percent': 98.95833333333334,
+  'total_evs': 33},
+ 30: {'defense': 2,
+  'special_defense': 0,
+  'defense_percent': 99.48186528497409,
+  'special_defense_percent': 98.44559585492227,
+  'total_evs': 32},
+ 31: {'defense': 2,
+  'special_defense': 0,
+  'defense_percent': 98.96907216494846,
+  'special_defense_percent': 97.9381443298969,
+  'total_evs': 33},
+ 32: {'defense': 2,
+  'special_defense': 0,
+  'defense_percent': 98.46153846153847,
+  'special_defense_percent': 97.43589743589743,
+  'total_evs': 34}}</code></pre>
+</div>
+</div>
+<div id="afac851e" class="cell" data-execution_count="321">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#print min total evs and corresponding hp, defense, and special defense evs</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>min_total_evs <span class="op">=</span> <span class="bu">min</span>([optimized_evs[hp][<span class="st">'total_evs'</span>] <span class="cf">for</span> hp <span class="kw">in</span> optimized_evs])</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hp <span class="kw">in</span> optimized_evs:</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> optimized_evs[hp][<span class="st">'total_evs'</span>] <span class="op">==</span> min_total_evs:</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Optimal HP EVs: </span><span class="sc">{</span>hp<span class="sc">}</span><span class="ss">, Optimal Defense EVs: </span><span class="sc">{</span>optimized_evs[hp][<span class="st">'defense'</span>]<span class="sc">}</span><span class="ss">, Optimal Special Defense EVs: </span><span class="sc">{</span>optimized_evs[hp][<span class="st">'special_defense'</span>]<span class="sc">}</span><span class="ss">, Total EVs: </span><span class="sc">{</span>optimized_evs[hp][<span class="st">'total_evs'</span>]<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Optimal HP EVs: 18, Optimal Defense EVs: 9, Optimal Special Defense EVs: 4, Total EVs: 31
+Optimal HP EVs: 22, Optimal Defense EVs: 7, Optimal Special Defense EVs: 2, Total EVs: 31
+Optimal HP EVs: 26, Optimal Defense EVs: 4, Optimal Special Defense EVs: 1, Total EVs: 31</code></pre>
+</div>
+</div>
+</section>
+<section id="results-optimal-ev-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="results-optimal-ev-distribution">Results: Optimal EV Distribution</h2>
+<p>The plot below shows the damage taken across all valid HP/Defense EV combinations.</p>
+<p><strong>Key finding:</strong><br>
+&gt; The optimal bulk occurs when allocating <strong>all EVs to Defense</strong>, given this stat profile.</p>
+<div id="c89a863c" class="cell" data-execution_count="322">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">#graph optimized_evs in a stacked bar chart with total evs on the y axis, with different colors for hp, defense and special defense evs</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>hp_evs <span class="op">=</span> <span class="bu">list</span>(optimized_evs.keys())</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>defense_evs <span class="op">=</span> [optimized_evs[hp][<span class="st">'defense'</span>] <span class="cf">for</span> hp <span class="kw">in</span> optimized_evs]</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>special_defense_evs <span class="op">=</span> [optimized_evs[hp][<span class="st">'special_defense'</span>] <span class="cf">for</span> hp <span class="kw">in</span> optimized_evs]</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>total_evs <span class="op">=</span> [optimized_evs[hp][<span class="st">'total_evs'</span>] <span class="cf">for</span> hp <span class="kw">in</span> optimized_evs]</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>))</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>plt.bar(hp_evs, hp_evs, color<span class="op">=</span><span class="st">'green'</span>, label<span class="op">=</span><span class="st">'HP EVs'</span>)</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>plt.bar(hp_evs, defense_evs, bottom<span class="op">=</span>hp_evs, color<span class="op">=</span><span class="st">'blue'</span>, label<span class="op">=</span><span class="st">'Defense EVs'</span>)</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>plt.bar(hp_evs, special_defense_evs, bottom<span class="op">=</span>np.add(hp_evs, defense_evs), color<span class="op">=</span><span class="st">'orange'</span>, label<span class="op">=</span><span class="st">'Special Defense EVs'</span>)</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'HP EVs'</span>)</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>plt.xticks(hp_evs)</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'EVs'</span>)</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Optimized EV Distribution'</span>)</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>plt.legend()</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="optimize%20pretty_files/figure-html/cell-17-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="key-takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li>Small EV changes can meaningfully shift survivability.</li>
+<li>For this statline, Defense investment outperforms HP investment.</li>
+<li>This method can generalize to any Pokémon or matchup.</li>
+</ul>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>This project demonstrates how data modeling can reveal optimal strategies in competitive environments.<br>
+By translating game mechanics into code, we can make informed, quantitative decisions about team building.</p>
+<p>If you’d like the full notebook or want to see more analyses like this, feel free to reach out.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
