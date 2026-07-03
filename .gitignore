@@ -9,3 +9,9 @@ Video 1.mp4
 ooptimize.md
 optimize pretty.html
 First Steps with Manim.ipynb
+
+# virtualenv
+.venv/
+venv/
+ENV/
+env/
