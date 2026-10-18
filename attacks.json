@@ -1,0 +1,26 @@
+[
+    {
+        "name": "Power Gem",
+        "power": 80,
+        "atk": 182,
+        "bonus": [1.5,2],
+        "PhySpec": "Special",
+        "evs": []
+    },
+    {
+        "name": "Dire Claw",
+        "power": 80,
+        "atk": 182,
+        "bonus": [1.5, 2],
+        "PhySpec": "Physical",
+        "evs": []
+    },
+    {
+        "name": "Hyper Voice",
+        "power": 129.6,
+        "atk": 178,
+        "bonus": [0.75, 1.5, 2],
+        "PhySpec": "Special",
+        "evs": []
+    }
+]

@@ -15,3 +15,5 @@ First Steps with Manim.ipynb
 venv/
 ENV/
 env/
+
+node_modules/
