@@ -1,19 +1,10 @@
-media/
-optimize pretty_files/
+*
 
-storyboard.pptx
-thumbnail.png
-thumbnail.pdn
-todo.txt
-Video 1.mp4
-ooptimize.md
-optimize pretty.html
-First Steps with Manim.ipynb
-
-# virtualenv
-.venv/
-venv/
-ENV/
-env/
-
-node_modules/
+!.gitignore
+!optimize scorecard.ipynb
+!reports/
+!readme.txt
+!damage.js
+!defenders.txt
+!attackers.txt
+!optimize scorecard.py

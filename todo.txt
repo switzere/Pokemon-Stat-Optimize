@@ -11,6 +11,8 @@ given a amount of evs what is the minimum damage you can take
 multi-hit problems
 optimizing bulk/rule of thumb
 
+> furfrou, since defense is doubled how much to do there?
+
 eventually have a list of benchmarks to hit (attacking and defending)
 list priority, then find optimal evs to get the benchmarks in order (or most)
 
@@ -20,3 +22,9 @@ if a move does more damage does that change the distribution of defensive evs?
 
 match "scorecard"
 - get pokemon from showdown import/export
+
+
+I am finding it hard to manually optimize because I don't know where the threshold really is
+The threshold would be where it is no longer optimal to invest in hp or def and goes instead to the other
+In reality it is probably some here then some there, but there is probably still a ratio that if you go over
+    that the next evs should go into the other stat
