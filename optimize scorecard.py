@@ -39,7 +39,7 @@ cmap_blue = LinearSegmentedColormap.from_list(
     ],
 )
 
-project_dir = Path(r"C:\Users\evan\Desktop\Personal Projects\Pokemon Stat Optimize")
+project_dir = Path(__file__).resolve().parent
 sprite_dir = project_dir / "images" / "sprites"
 report_figures = []
 
@@ -989,7 +989,7 @@ for page_num in range(page_count):
     #pdf.savefig(fig)
     plt.close(fig)
 
-with PdfPages("pokemon_report.pdf") as pdf:
+with PdfPages(project_dir / "pokemon_report.pdf") as pdf:
     for fig in report_figures:
         pdf.savefig(fig, bbox_inches="tight")
 
