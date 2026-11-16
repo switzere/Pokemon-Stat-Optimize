@@ -2,12 +2,12 @@
 
 !.gitignore
 !optimize scorecard.ipynb
-!reports/*
+!reports/**
 !reports/
 !readme.txt
 !damage.js
 !defenders.txt
 !attackers.txt
 !optimize scorecard.py
-!images/*
+!images/**
 !images/
