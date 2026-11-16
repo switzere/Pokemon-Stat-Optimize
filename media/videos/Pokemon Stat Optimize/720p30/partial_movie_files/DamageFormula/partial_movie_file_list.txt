@@ -1,3 +1,0 @@
-# This file is used internally by FFMPEG.
-file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/DamageFormula/1400776734_194758967_223132457.mp4'
-file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/DamageFormula/1990650787_2834709167_2264950612.mp4'

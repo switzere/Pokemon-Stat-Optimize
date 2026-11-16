@@ -1,5 +1,0 @@
-# This file is used internally by FFMPEG.
-file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/AnimatedDamageSurface/1702590154_1433868340_223132457.mp4'
-file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/AnimatedDamageSurface/3076678761_1196311913_3065127336.mp4'
-file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/AnimatedDamageSurface/3076678761_2697571912_1605306441.mp4'
-file 'file:C:/Users/evan/Desktop/Personal Projects/Pokemon Stat Optimize/media/videos/Pokemon Stat Optimize/720p30/partial_movie_files/AnimatedDamageSurface/3475283089_2357401685_1062608982.mp4'
